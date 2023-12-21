@@ -45,7 +45,7 @@ export const int = (count: number, cast: Cast = "saturated") => {
   const signBit = 1 << (count - 1);
   const mask = signBit - 1;
   const encode = (bits: BitWriter, value: number) =>
-    bits.write(count, value < 1 ? signBit | (-value & mask) : value & mask);
+    bits.write(count, value < 0 ? signBit | (-value & mask) : value & mask);
   const decode = (bits: BitReader) => {
     const value = Number(bits.read(count));
     return (value & signBit ? -1 : 1) * (value & mask);
