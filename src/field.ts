@@ -131,7 +131,7 @@ export const variableArray = <T>(field: Field<T>, max: number) => {
   const dsdl = `${field.dsdl}[<=${max}]`;
   const maximumBits = field.maximumBits * max;
   const tailArrayOptimizable = field.maximumBits >= 8;
-  const size = Math.ceil(Math.log2(max));
+  const size = Math.ceil(Math.log2(max + 1));
   const encode = (
     bits: BitWriter,
     value: T[],
@@ -195,7 +195,7 @@ export const variableTypeArray = <
   const dsdl = `${type}[<=${max}]`;
   const tailArrayOptimizable = maximumBits >= 8;
   maximumBits *= max;
-  const size = Math.ceil(Math.log2(max));
+  const size = Math.ceil(Math.log2(max + 1));
   const encode = (
     bits: BitWriter,
     value: DefinitionType<Definition>[],

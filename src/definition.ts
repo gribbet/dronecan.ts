@@ -42,7 +42,7 @@ const decodeUnionType = <T extends TypeDefinition>(
   bits: BitReader,
 ) => {
   const count = fields(definition).length;
-  const size = Math.ceil(Math.log2(count));
+  const size = Math.ceil(Math.log2(count + 1));
   const index = Number(bits.read(size));
 
   const field = assert(fields(definition)[index]);
@@ -88,7 +88,7 @@ const encodeUnionType = <T extends TypeDefinition>(
   value: UnionDefinitionType<T>,
 ) => {
   const count = fields(definition).length;
-  const size = Math.ceil(Math.log2(count));
+  const size = Math.ceil(Math.log2(count + 1));
   const field = assert(fields(definition).find(_ => keys(value).includes(_)));
   const index = fields(definition).indexOf(field);
   bits.write(size, index);
