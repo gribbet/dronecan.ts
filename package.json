@@ -4,7 +4,7 @@
   "license": "ISC",
   "repository": {
     "type": "git",
-    "url": "https://github.com/gribbet/drone-can.ts.git"
+    "url": "https://github.com/gribbet/dronecan.ts.git"
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
