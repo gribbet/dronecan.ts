@@ -1,9 +1,10 @@
 import { createBitReader } from "./bits";
 import { transferCrc } from "./crc";
-import { Frame, decodeFrame } from "./frame";
+import type { CanPayload } from "./dronecan";
+import type { Frame } from "./frame";
+import { decodeFrame } from "./frame";
 import { decodeTail } from "./tail";
 import { append } from "./util";
-import { CanPayload } from "./dronecan";
 
 export type Receiver = {
   read: (payload: CanPayload) => void;
@@ -11,7 +12,7 @@ export type Receiver = {
 
 export const createReceiver = (
   signatures: { [id: number]: bigint },
-  receive: (frame: Frame, payload: Uint8Array, transferId: number) => void
+  receive: (frame: Frame, payload: Uint8Array, transferId: number) => void,
 ) => {
   type State = {
     payload: Uint8Array;
@@ -24,7 +25,7 @@ export const createReceiver = (
 
   const read = ({ id, data }: CanPayload) => {
     const frame = decodeFrame(id);
-    const tail = decodeTail(data[data.length - 1]);
+    const tail = decodeTail(data[data.length - 1]!);
 
     const reset: State = {
       payload: new Uint8Array(),

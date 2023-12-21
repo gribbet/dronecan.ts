@@ -29,7 +29,7 @@ export type ServiceFrame = {
 
 export type Frame = MessageFrame | AnonymousFrame | ServiceFrame;
 
-export const decodeFrame: (id: number) => Frame = (id) => {
+export const decodeFrame: (id: number) => Frame = id => {
   const bits = createBitReader(u32Bytes(id));
   const service = Boolean(bits.read(1));
   const source = Number(bits.read(7));
@@ -48,30 +48,28 @@ export const decodeFrame: (id: number) => Frame = (id) => {
       priority,
       other,
     };
+  } else if (source === 0) {
+    const discriminator = Number(bits.read(14));
+    const id = Number(bits.read(2));
+    const other = Number(bits.read(3));
+    const priority = Number(bits.read(5));
+    return {
+      type: "anonymous",
+      source,
+      id,
+      discriminator,
+      priority,
+      other,
+    };
   } else {
-    if (source === 0) {
-      const discriminator = Number(bits.read(14));
-      const id = Number(bits.read(2));
-      const other = Number(bits.read(3));
-      const priority = Number(bits.read(5));
-      return {
-        type: "anonymous",
-        source,
-        id,
-        discriminator,
-        priority,
-        other,
-      };
-    } else {
-      const id = Number(bits.read(16));
-      const other = Number(bits.read(3));
-      const priority = Number(bits.read(5));
-      return { type: "message", source, id, priority, other };
-    }
+    const id = Number(bits.read(16));
+    const other = Number(bits.read(3));
+    const priority = Number(bits.read(5));
+    return { type: "message", source, id, priority, other };
   }
 };
 
-export const encodeFrame: (frame: Frame) => number = (frame) => {
+export const encodeFrame: (frame: Frame) => number = frame => {
   const { type, source, priority, other } = frame;
   const service = type === "service";
   const bits = createBitWriter();
@@ -86,7 +84,7 @@ export const encodeFrame: (frame: Frame) => number = (frame) => {
     const { id, discriminator } = frame;
     bits.write(14, discriminator);
     bits.write(2, id);
-  } else if (type === "message") {
+  } else {
     const { id } = frame;
     bits.write(16, id);
   }

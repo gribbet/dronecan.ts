@@ -1,9 +1,11 @@
-import { u16Bytes, u8Bytes } from "./bits";
+import { u8Bytes, u16Bytes } from "./bits";
 import { transferCrc } from "./crc";
-import { Frame, encodeFrame } from "./frame";
-import { Tail, encodeTail } from "./tail";
-import { append } from "./util";
-import { CanPayload } from "./dronecan";
+import type { CanPayload } from "./dronecan";
+import type { Frame } from "./frame";
+import { encodeFrame } from "./frame";
+import type { Tail } from "./tail";
+import { encodeTail } from "./tail";
+import { append, assert } from "./util";
 
 export type Sender = {
   receive: AsyncIterator<CanPayload>;
@@ -17,14 +19,14 @@ type State = {
 
 export const createSender = (
   signatures: { [id: number]: bigint },
-  write: (payload: CanPayload) => void
+  write: (payload: CanPayload) => void,
 ) => {
   const states: { [id: number]: State } = {};
 
   const send = (
     frame: Frame,
     payload: Uint8Array,
-    requestTransferId?: number
+    requestTransferId?: number,
   ) => {
     const id = encodeFrame(frame);
 
@@ -50,7 +52,7 @@ export const createSender = (
 
       write({ id, data });
     } else {
-      const signature = signatures[frame.id];
+      const signature = assert(signatures[frame.id]);
       const crc = transferCrc(signature, payload);
 
       payload = append(u16Bytes(crc), payload);

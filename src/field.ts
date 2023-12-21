@@ -1,13 +1,11 @@
 import { getFloat16, setFloat16 } from "@petamoriken/float16";
-import { Any, keys, range } from "./util";
-import { BitReader, BitWriter } from "./bits";
-import {
-  DefinitionType,
-  TypeDefinition,
-  decodeType,
-  encodeType,
-} from "./definition";
-import { MessageDefinition } from "./specification";
+
+import type { BitReader, BitWriter } from "./bits";
+import type { DefinitionType, TypeDefinition } from "./definition";
+import { decodeType, encodeType } from "./definition";
+import type { MessageDefinition } from "./specification";
+import type { Any } from "./util";
+import { assert, keys, range } from "./util";
 
 export const union = Symbol();
 
@@ -19,7 +17,7 @@ export type Field<T> = {
   decode: (bits: BitReader, tailArrayOptimization?: "tao") => T;
 };
 
-export type FieldType<T> = T extends Field<infer T> ? T : never;
+export type FieldType<T> = T extends Field<infer U> ? U : never;
 
 type Cast = "saturated" | "truncated";
 
@@ -123,7 +121,7 @@ export const array = <T>(field: Field<T>, count: number) => {
   const dsdl = `${field.dsdl}[${count}]`;
   const maximumBits = field.maximumBits * count;
   const encode = (bits: BitWriter, value: T[]) =>
-    range(0, count).forEach((i) => field.encode(bits, value[i]));
+    range(0, count).forEach(i => field.encode(bits, assert(value[i])));
   const decode = (bits: BitReader) =>
     range(0, count).map(() => field.decode(bits));
   return { dsdl, maximumBits, encode, decode } satisfies Field<T[]>;
@@ -137,12 +135,12 @@ export const variableArray = <T>(field: Field<T>, max: number) => {
   const encode = (
     bits: BitWriter,
     value: T[],
-    tailArrayOptimization?: "tao"
+    tailArrayOptimization?: "tao",
   ) => {
     const count = Math.min(value.length, max);
     if (!tailArrayOptimization || !tailArrayOptimizable)
       bits.write(size, count);
-    range(0, count).forEach((i) => field.encode(bits, value[i]));
+    range(0, count).forEach(i => field.encode(bits, assert(value[i])));
   };
   const decode = (bits: BitReader, tailArrayOptimization?: "tao") => {
     if (!tailArrayOptimization || !tailArrayOptimizable) {
@@ -159,7 +157,7 @@ export const variableArray = <T>(field: Field<T>, max: number) => {
 
 export const typeArray = <
   Type extends string,
-  Definition extends TypeDefinition
+  Definition extends TypeDefinition,
 >(
   {
     type,
@@ -167,12 +165,14 @@ export const typeArray = <
     signature,
     maximumBits,
   }: MessageDefinition<Any, Type, Definition>,
-  count: number
+  count: number,
 ) => {
   const dsdl = `${type}[${count}]`;
   maximumBits *= count;
   const encode = (bits: BitWriter, value: DefinitionType<Definition>[]) =>
-    range(0, count).forEach((i) => encodeType(definition, bits, value[i]));
+    range(0, count).forEach(i =>
+      encodeType(definition, bits, assert(value[i])),
+    );
   const decode = (bits: BitReader) =>
     range(0, count).map(() => decodeType(definition, bits));
   return { dsdl, signature, maximumBits, encode, decode } satisfies Field<
@@ -182,7 +182,7 @@ export const typeArray = <
 
 export const variableTypeArray = <
   Type extends string,
-  Definition extends TypeDefinition
+  Definition extends TypeDefinition,
 >(
   {
     type,
@@ -190,7 +190,7 @@ export const variableTypeArray = <
     signature,
     maximumBits,
   }: MessageDefinition<Any, Type, Definition>,
-  max: number
+  max: number,
 ) => {
   const dsdl = `${type}[<=${max}]`;
   const tailArrayOptimizable = maximumBits >= 8;
@@ -199,12 +199,14 @@ export const variableTypeArray = <
   const encode = (
     bits: BitWriter,
     value: DefinitionType<Definition>[],
-    tailArrayOptimization?: "tao"
+    tailArrayOptimization?: "tao",
   ) => {
     const count = Math.min(value.length, max);
     if (!tailArrayOptimization || !tailArrayOptimizable)
       bits.write(size, count);
-    range(0, count).forEach((i) => encodeType(definition, bits, value[i]));
+    range(0, count).forEach(i =>
+      encodeType(definition, bits, assert(value[i])),
+    );
   };
   const decode = (bits: BitReader, tailArrayOptimization?: "tao") => {
     if (!tailArrayOptimization || !tailArrayOptimizable) {
@@ -236,7 +238,7 @@ export const variableByteArray = (max: number) => {
   const encode = (
     bits: BitWriter,
     value: Uint8Array,
-    tailArrayOptimization?: "tao"
+    tailArrayOptimization?: "tao",
   ) => field.encode(bits, [...value], tailArrayOptimization);
   const decode = (bits: BitReader, tailArrayOptimization?: "tao") =>
     new Uint8Array(field.decode(bits, tailArrayOptimization));
@@ -249,12 +251,12 @@ export const string = (max: number) => {
   const encode = (
     bits: BitWriter,
     value: string,
-    tailArrayOptimization?: "tao"
+    tailArrayOptimization?: "tao",
   ) =>
     field.encode(
       bits,
       new TextEncoder().encode(value.slice(0, max)),
-      tailArrayOptimization
+      tailArrayOptimization,
     );
   const decode = (bits: BitReader, tailArrayOptimization?: "tao") =>
     new TextDecoder().decode(field.decode(bits, tailArrayOptimization));
@@ -266,7 +268,7 @@ export const enumeration = <T>(count: number, options: readonly T[]) => {
   const { dsdl, maximumBits } = field;
   const encode = (bits: BitWriter, option: T) =>
     field.encode(bits, options.indexOf(option));
-  const decode = (bits: BitReader) => options[field.decode(bits)];
+  const decode = (bits: BitReader) => assert(options[field.decode(bits)]);
   return {
     dsdl,
     maximumBits,
@@ -282,14 +284,14 @@ export const flags = <T>(options: readonly T[]) => {
     field.encode(
       bits,
       value
-        .map((_) => options.indexOf(_))
-        .map((_) => 1 << _)
-        .reduce((a, b) => a | b, 0)
+        .map(_ => options.indexOf(_))
+        .map(_ => 1 << _)
+        .reduce((a, b) => a | b, 0),
     );
   const decode = (bits: BitReader) => {
     const value = field.decode(bits);
-    return range(0, options.length).flatMap((_) =>
-      value & (1 << _) ? [options[_]] : []
+    return range(0, options.length).flatMap(_ =>
+      value & (1 << _) ? [options[_]] : [],
     );
   };
   return { dsdl, maximumBits, encode, decode } as Field<T[]>;
@@ -297,24 +299,24 @@ export const flags = <T>(options: readonly T[]) => {
 
 export const mapped = <T, Values extends { [value: string]: T }>(
   field: Field<T>,
-  values: Values
+  values: Values,
 ) => {
   const { dsdl, maximumBits } = field;
   const encode = (bits: BitWriter, value: keyof Values | T) =>
     field.encode(
       bits,
-      typeof value === "string" ? values[value] : (value as T)
+      typeof value === "string" ? values[value] : (value as T),
     );
   const decode = (bits: BitReader) => {
     const value = field.decode(bits);
-    return keys(values).find((_) => values[_] === value) ?? value;
+    return keys(values).find(_ => values[_] === value) ?? value;
   };
   return { dsdl, maximumBits, encode, decode } as Field<number | keyof Values>;
 };
 
 export const reference = <
   Type extends string,
-  Definition extends TypeDefinition
+  Definition extends TypeDefinition,
 >({
   type,
   definition,

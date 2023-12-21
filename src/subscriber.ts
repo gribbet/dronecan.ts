@@ -10,11 +10,11 @@ export const createSubscriber: <T>() => Subscriber<T> = <T>() => {
   const subscribe = (handler: Handler) => {
     handlers = [handler, ...handlers];
     return () => {
-      handlers = handlers.filter((_) => _ !== handler);
+      handlers = handlers.filter(_ => _ !== handler);
     };
   };
 
-  const emit = (value: T) => handlers.forEach((handler) => handler(value));
+  const emit = (value: T) => handlers.forEach(handler => handler(value));
 
   return {
     subscribe,

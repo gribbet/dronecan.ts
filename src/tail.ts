@@ -1,4 +1,5 @@
 import { createBitReader, createBitWriter, u8Bytes } from "./bits";
+import { assert } from "./util";
 
 export type Tail = {
   transferId: number;
@@ -7,7 +8,7 @@ export type Tail = {
   start: boolean;
 };
 
-export const decodeTail: (tail: number) => Tail = (tail) => {
+export const decodeTail: (tail: number) => Tail = tail => {
   const bits = createBitReader(u8Bytes(tail));
   const start = !!bits.read(1);
   const end = !!bits.read(1);
@@ -28,5 +29,5 @@ export const encodeTail: (tail: Tail) => number = ({
   bits.write(1, toggle ? 1 : 0);
   bits.write(5, transferId);
   const [value] = bits.data;
-  return value;
+  return assert(value);
 };

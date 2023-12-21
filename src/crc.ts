@@ -8,9 +8,9 @@ const crc16 = (data: Uint8Array) =>
   [...data].reduce(
     (value, x) =>
       range(0, 8).reduce(
-        (value) =>
+        value =>
           value & 0x8000 ? ((value << 1) & 0xffff) ^ 0x1021 : value << 1,
-        value ^ (x << 8)
+        value ^ (x << 8),
       ),
-    0xffff
+    0xffff,
   );

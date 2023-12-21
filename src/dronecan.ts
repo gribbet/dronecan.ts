@@ -1,15 +1,15 @@
-import { createSubscriber } from "./subscriber";
-import { Any, exhaust, map } from "./util";
-import { Frame, ServiceFrame } from "./frame";
+import type { Frame, ServiceFrame } from "./frame";
 import { createReceiver } from "./receiver";
 import { createSender } from "./sender";
-import {
+import type {
   Message,
   MessageType,
   Schema,
   ServiceRequest,
   ServiceResponse,
   ServiceType,
+} from "./specification";
+import {
   collectSignatures,
   decodeMessage,
   decodeRequest,
@@ -22,24 +22,27 @@ import {
   serviceFromType,
   serviceTypeFromId,
 } from "./specification";
+import { createSubscriber } from "./subscriber";
+import type { Any } from "./util";
+import { exhaust, map } from "./util";
 
 export type Dronecan<S extends Schema> = {
   broadcast: <Type extends MessageType<S>>(
     type: Type,
-    message: Message<S, Type>
+    message: Message<S, Type>,
   ) => void;
   request: <Type extends ServiceType<S>>(
     type: Type,
     destination: number,
-    request: ServiceRequest<S, Type>
+    request: ServiceRequest<S, Type>,
   ) => Promise<ServiceResponse<S, Type> | undefined>;
   onMessage: <Type extends MessageType<S>>(
     type: Type,
-    handler: (message: ReceivedMessage<S, Type>) => void
+    handler: (message: ReceivedMessage<S, Type>) => void,
   ) => () => void;
   onRequest: <Type extends ServiceType<S>>(
     type: Type,
-    handler: (request: ServiceRequest<S, Type>) => ServiceResponse<S, Type>
+    handler: (request: ServiceRequest<S, Type>) => ServiceResponse<S, Type>,
   ) => () => void;
   nodeId: number;
 };
@@ -64,7 +67,7 @@ export type ReceivedMessage<S extends Schema, Type extends MessageType<S>> = {
 export const createDronecan = <S extends Schema>(
   can: Can,
   schema: S,
-  nodeId: number
+  nodeId: number,
 ) => {
   const signatures = collectSignatures(schema);
 
@@ -89,18 +92,18 @@ export const createDronecan = <S extends Schema>(
     type: Type,
     source: number,
     transferId: number,
-    response: ServiceResponse<S, Type>
+    response: ServiceResponse<S, Type>,
   ) => {
     const onComplete = requests.find(
-      (_) =>
+      _ =>
         _.type === type &&
         _.destination === source &&
-        _.transferId === transferId
+        _.transferId === transferId,
     )?.onComplete;
 
     onComplete?.(response);
 
-    requests = requests.filter((_) => _.onComplete !== onComplete);
+    requests = requests.filter(_ => _.onComplete !== onComplete);
   };
 
   const receiver = createReceiver(signatures, (frame, payload, transferId) => {
@@ -110,7 +113,7 @@ export const createDronecan = <S extends Schema>(
         const type = messageTypeFromId(schema, frame.id);
         if (!type) return;
         const message = decodeMessage(schema, type, payload);
-        if (message) messageSubscriber.emit({ type, source, message });
+        messageSubscriber.emit({ type, source, message });
         return;
       }
       case "service": {
@@ -122,12 +125,9 @@ export const createDronecan = <S extends Schema>(
 
         if (request) {
           const request = decodeRequest(schema, type, payload);
-          if (!request) return;
-
           requestSubscriber.emit({ frame, request, transferId });
         } else {
           const response = decodeResponse(schema, type, payload);
-          if (!response) return;
           handleResponse(type, source, transferId, response);
         }
       }
@@ -136,11 +136,11 @@ export const createDronecan = <S extends Schema>(
 
   const sender = createSender(signatures, can.write);
 
-  exhaust(map<CanPayload, void>(can.read, receiver.read));
+  void exhaust(map<CanPayload, void>(can.read, receiver.read));
 
   const broadcast = <Type extends MessageType<S>>(
     type: Type,
-    message: Message<S, Type>
+    message: Message<S, Type>,
   ) => {
     const { id } = messageFromType(schema, type);
     if (id === undefined) return;
@@ -156,7 +156,7 @@ export const createDronecan = <S extends Schema>(
   const request = <Type extends ServiceType<S>>(
     type: Type,
     destination: number,
-    request: ServiceRequest<S, Type>
+    request: ServiceRequest<S, Type>,
   ) => {
     const { id } = serviceFromType(schema, type);
     const frame: Frame = {
@@ -167,7 +167,7 @@ export const createDronecan = <S extends Schema>(
       id,
     };
     const transferId = sender.send(frame, encodeRequest(schema, type, request));
-    return new Promise<ServiceResponse<S, Type>>((onComplete) => {
+    return new Promise<ServiceResponse<S, Type>>(onComplete => {
       const request: OpenRequest<Type> = {
         type,
         destination,
@@ -180,30 +180,26 @@ export const createDronecan = <S extends Schema>(
 
   const onMessage = <Type extends MessageType<S>>(
     type: Type,
-    handler: (message: ReceivedMessage<S, Type>) => void
+    handler: (message: ReceivedMessage<S, Type>) => void,
   ) =>
-    messageSubscriber.subscribe((received) => {
+    messageSubscriber.subscribe(received => {
       if (type === received.type) handler(received as ReceivedMessage<S, Type>);
     });
 
   const onRequest = <Type extends ServiceType<S>>(
     _type: Type,
-    handler: (Request: ServiceRequest<S, Type>) => ServiceResponse<S, Type>
+    handler: (Request: ServiceRequest<S, Type>) => ServiceResponse<S, Type>,
   ) =>
     requestSubscriber.subscribe(({ frame, request, transferId }) => {
       const type = serviceTypeFromId(schema, frame.id);
       if (type !== _type) return;
-
       const response = handler(request as ServiceRequest<S, Type>);
-      if (!response) return;
-
       frame = {
         ...frame,
         source: nodeId,
         destination: frame.source,
         request: false,
       };
-
       sender.send(frame, encodeResponse(schema, type, response), transferId);
     });
 

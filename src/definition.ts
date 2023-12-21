@@ -1,6 +1,9 @@
-import { Any, camelToSnakeCase, keys } from "./util";
-import { BitReader, BitWriter, createBitReader, createBitWriter } from "./bits";
-import { Field, union } from "./field";
+import type { BitReader, BitWriter } from "./bits";
+import { createBitReader, createBitWriter } from "./bits";
+import type { Field } from "./field";
+import { union } from "./field";
+import type { Any } from "./util";
+import { assert, camelToSnakeCase, keys } from "./util";
 
 type Union = {
   [union]: readonly [];
@@ -24,25 +27,25 @@ const fields = <T extends TypeDefinition>(definition: T) =>
 export const decodeType = <T extends TypeDefinition>(
   definition: T,
   bits: BitReader,
-  tailArrayOptimization?: "tao"
+  tailArrayOptimization?: "tao",
 ) =>
   (union in definition
     ? decodeUnionType(definition, bits)
     : decodeStandardType(
         definition,
         bits,
-        tailArrayOptimization
+        tailArrayOptimization,
       )) as DefinitionType<T>;
 
 const decodeUnionType = <T extends TypeDefinition>(
   definition: T,
-  bits: BitReader
+  bits: BitReader,
 ) => {
   const count = fields(definition).length;
   const size = Math.ceil(Math.log2(count));
   const index = Number(bits.read(size));
 
-  const field = fields(definition)[index];
+  const field = assert(fields(definition)[index]);
   const value = definition[field].decode(bits);
 
   return { [field]: value } as UnionDefinitionType<T>;
@@ -51,24 +54,24 @@ const decodeUnionType = <T extends TypeDefinition>(
 const decodeStandardType = <T extends TypeDefinition>(
   definition: T,
   bits: BitReader,
-  tailArrayOptimization?: "tao"
+  tailArrayOptimization?: "tao",
 ) =>
   fields(definition).reduce(
     (acc, field, i) => (
-      (acc[field] = definition[field].decode(
+      (acc[field] = assert(definition[field]).decode(
         bits,
-        i === fields(definition).length - 1 ? tailArrayOptimization : undefined
+        i === fields(definition).length - 1 ? tailArrayOptimization : undefined,
       )),
       acc
     ),
-    {} as StandardDefinitionType<T>
+    {} as StandardDefinitionType<T>,
   );
 
 export const encodeType = <T extends TypeDefinition>(
   definition: T,
   bits: BitWriter,
   value: DefinitionType<T>,
-  tailArrayOptimization?: "tao"
+  tailArrayOptimization?: "tao",
 ) =>
   union in definition
     ? encodeUnionType(definition, bits, value)
@@ -76,18 +79,17 @@ export const encodeType = <T extends TypeDefinition>(
         definition,
         bits,
         value as StandardDefinitionType<T>,
-        tailArrayOptimization
+        tailArrayOptimization,
       );
 
 const encodeUnionType = <T extends TypeDefinition>(
   definition: T,
   bits: BitWriter,
-  value: UnionDefinitionType<T>
+  value: UnionDefinitionType<T>,
 ) => {
   const count = fields(definition).length;
   const size = Math.ceil(Math.log2(count));
-  const field = fields(definition).find((_) => keys(value).includes(_));
-  if (!field) throw "unexpected";
+  const field = assert(fields(definition).find(_ => keys(value).includes(_)));
   const index = fields(definition).indexOf(field);
   bits.write(size, index);
   definition[field].encode(bits, value);
@@ -97,24 +99,24 @@ const encodeStandardType = <T extends TypeDefinition>(
   definition: T,
   bits: BitWriter,
   value: StandardDefinitionType<T>,
-  tailArrayOptimization?: "tao"
+  tailArrayOptimization?: "tao",
 ) =>
   fields(definition).forEach((field, i) =>
-    definition[field].encode(
+    assert(definition[field]).encode(
       bits,
       value[field],
-      i === fields(definition).length - 1 ? tailArrayOptimization : undefined
-    )
+      i === fields(definition).length - 1 ? tailArrayOptimization : undefined,
+    ),
   );
 
 export const decoded = <T extends TypeDefinition>(
   definition: T,
-  data: Uint8Array
+  data: Uint8Array,
 ) => decodeType(definition, createBitReader(data), "tao");
 
 export const encoded = <T extends TypeDefinition>(
   definition: T,
-  value: DefinitionType<T>
+  value: DefinitionType<T>,
 ) => {
   const bits = createBitWriter();
   encodeType(definition, bits, value, "tao");
@@ -124,8 +126,8 @@ export const encoded = <T extends TypeDefinition>(
 export const definitionDsdl = <T extends TypeDefinition>(definition: T) =>
   [
     ...(union in definition ? ["@union"] : []),
-    ...fields(definition).map((key) => {
-      const dsdl = definition[key].dsdl;
+    ...fields(definition).map(key => {
+      const { dsdl } = assert(definition[key]);
       return dsdl.startsWith("void")
         ? dsdl
         : `${dsdl} ${camelToSnakeCase(String(key))}`;

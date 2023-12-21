@@ -8,20 +8,20 @@ const crc = (data: Uint8Array, initial = 0n) =>
   [...data].reduce(
     (value, x) =>
       range(0, 8).reduce(
-        (value) =>
+        value =>
           value & (1n << 63n) ? ((value << 1n) & mask) ^ poly : value << 1n,
-        value ^ ((BigInt(x) << 56n) & mask)
+        value ^ ((BigInt(x) << 56n) & mask),
       ),
-    initial ^ mask
+    initial ^ mask,
   ) ^ mask;
 
 export const dsdlSignature: (dsdl: string, signatures?: bigint[]) => bigint = (
   dsdl,
-  signatures = []
+  signatures = [],
 ) => {
   const signature = crc(new TextEncoder().encode(dsdl));
   return signatures.reduce(
     (acc, signature) => crc(append(u64Bytes(signature), u64Bytes(acc)), acc),
-    signature
+    signature,
   );
 };
