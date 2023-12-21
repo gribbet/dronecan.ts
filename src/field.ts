@@ -324,9 +324,13 @@ export const reference = <
   maximumBits,
 }: MessageDefinition<Any, Type, Definition>) => {
   const dsdl = type;
-  const encode = (bits: BitWriter, value: DefinitionType<Definition>) =>
-    encodeType(definition, bits, value);
-  const decode = (bits: BitReader) => decodeType(definition, bits);
+  const encode = (
+    bits: BitWriter,
+    value: DefinitionType<Definition>,
+    tailArrayOptimization?: "tao",
+  ) => encodeType(definition, bits, value, tailArrayOptimization);
+  const decode = (bits: BitReader, tailArrayOptimization?: "tao") =>
+    decodeType(definition, bits, tailArrayOptimization);
   return {
     dsdl,
     maximumBits,
