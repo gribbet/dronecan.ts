@@ -29,6 +29,7 @@ export const range = (start: number, end: number) =>
 export const camelToSnakeCase = (value: string) =>
   value.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
 
+// eslint-disable-next-line func-style
 export async function* map<T, U>(
   iterable: AsyncIterable<T>,
   f: (value: T) => U | Promise<U>,
