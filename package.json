@@ -1,0 +1,20 @@
+{
+  "name": "dronecan.ts",
+  "version": "0.1.0",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gribbet/drone-can.ts.git"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "/dist"
+  ],
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "@petamoriken/float16": "^3.8.4"
+  }
+}
