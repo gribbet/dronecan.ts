@@ -76,10 +76,10 @@ export const float16 = (cast: Cast = "saturated") => {
   const view = new DataView(data.buffer);
   const encode = (bits: BitWriter, value: number) => {
     setFloat16(view, 0, value, true);
-    bits.write(16, view.getUint16(0));
+    bits.write(16, view.getUint16(0, true));
   };
   const decode = (bits: BitReader) => {
-    view.setUint16(0, Number(bits.read(16)));
+    view.setUint16(0, Number(bits.read(16)), true);
     return getFloat16(view, 0, true);
   };
   return { dsdl, maximumBits, encode, decode } satisfies Field<number>;
@@ -92,7 +92,7 @@ export const float32 = (cast: Cast = "saturated") => {
   const view = new DataView(data.buffer);
   const encode = (bits: BitWriter, value: number) => {
     view.setFloat32(0, value, true);
-    bits.write(32, view.getUint32(0));
+    bits.write(32, view.getUint32(0, true));
   };
   const decode = (bits: BitReader) => {
     view.setUint32(0, Number(bits.read(32)), true);
