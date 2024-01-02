@@ -46,6 +46,6 @@ export const exhaust = async <T>(iterable: AsyncIterable<T>) => {
 };
 
 export const assert = <T>(value: T | undefined) => {
-  if (value === undefined) throw "unexpected";
+  if (value === undefined) throw new Error("unexpected");
   return value;
 };
