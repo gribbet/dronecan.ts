@@ -42,7 +42,7 @@ const writeBits: (
     const index = Math.floor((i + offset) / 8);
     const byte = data[index] ?? 0;
     const writeMask = (1n << BigInt(n)) - 1n;
-    const bits = Number((value << BigInt(i)) & writeMask);
+    const bits = Number((value >> BigInt(i)) & writeMask);
     const bitOffset = Math.max(0, 8 - end);
     const mask = ((1 << n) - 1) << bitOffset;
     data[index] = (byte & ~mask) | ((bits << bitOffset) & mask);
