@@ -54,8 +54,8 @@ export type CanPayload = {
 
 export type Can = {
   read: AsyncIterable<CanPayload>;
-  write: (data: CanPayload) => Promise<void>;
-  destroy: () => void;
+  write: (data: CanPayload) => void;
+  destroy?: () => void;
 };
 
 export type ReceivedMessage<S extends Schema, Type extends MessageType<S>> = {
