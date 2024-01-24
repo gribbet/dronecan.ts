@@ -29,22 +29,6 @@ export const range = (start: number, end: number) =>
 export const camelToSnakeCase = (value: string) =>
   value.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
 
-// eslint-disable-next-line func-style
-export async function* map<T, U>(
-  iterable: AsyncIterable<T>,
-  f: (value: T) => U | Promise<U>,
-) {
-  for await (const item of iterable) yield f(item);
-}
-
-// eslint-disable-next-line no-async-without-await/no-async-without-await
-export const exhaust = async <T>(iterable: AsyncIterable<T>) => {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  for await (const _ of iterable) {
-    //
-  }
-};
-
 export const assert = <T>(value: T | undefined) => {
   if (value === undefined) throw new Error("unexpected");
   return value;

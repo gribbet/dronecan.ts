@@ -24,7 +24,6 @@ import {
 } from "./specification";
 import { createSubscriber } from "./subscriber";
 import type { Any } from "./util";
-import { exhaust, map } from "./util";
 
 export type Dronecan<S extends Schema> = {
   broadcast: <Type extends MessageType<S>>(
@@ -44,6 +43,7 @@ export type Dronecan<S extends Schema> = {
     type: Type,
     handler: (request: ServiceRequest<S, Type>) => ServiceResponse<S, Type>,
   ) => () => void;
+  destroy: () => void;
   nodeId: number;
 };
 
@@ -53,9 +53,9 @@ export type CanPayload = {
 };
 
 export type Can = {
-  read: AsyncIterable<CanPayload>;
+  read: (handler: (data: CanPayload) => void) => () => void;
   write: (data: CanPayload) => void;
-  destroy?: () => void;
+  destroy: () => void;
 };
 
 export type ReceivedMessage<S extends Schema, Type extends MessageType<S>> = {
@@ -136,7 +136,7 @@ export const createDronecan = <S extends Schema>(
 
   const sender = createSender(signatures, can.write);
 
-  void exhaust(map<CanPayload, void>(can.read, receiver.read));
+  const destroy = can.read(receiver.read);
 
   const broadcast = <Type extends MessageType<S>>(
     type: Type,
@@ -208,6 +208,7 @@ export const createDronecan = <S extends Schema>(
     request,
     onMessage,
     onRequest,
+    destroy,
     nodeId,
   } satisfies Dronecan<S>;
 };

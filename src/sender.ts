@@ -8,7 +8,6 @@ import { encodeTail } from "./tail";
 import { append, assert } from "./util";
 
 export type Sender = {
-  receive: AsyncIterator<CanPayload>;
   send: (frame: Frame, payload: Uint8Array) => void;
 };
 
@@ -85,5 +84,5 @@ export const createSender = (
     return currentTransferId;
   };
 
-  return { send };
+  return { send } satisfies Sender;
 };
