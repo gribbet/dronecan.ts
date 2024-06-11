@@ -39,8 +39,13 @@ export const createReceiver = (
       expired ||
       tail.toggle !== state.toggle ||
       tail.transferId !== state.transferId
-    )
+    ) {
+      if (expired) console.log("Expired");
+      if (tail.toggle !== state.toggle) console.log("Invalid toggle");
+      if (tail.transferId !== state.transferId)
+        console.log("Invalid transfer ID");
       state = reset;
+    }
 
     states[id] = state;
 
