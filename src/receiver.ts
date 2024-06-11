@@ -30,10 +30,10 @@ export const createReceiver = (
     const reset: State = {
       payload: new Uint8Array(),
       transferId: tail.transferId,
-      toggle: tail.toggle,
+      toggle: false,
       timestamp: Date.now(),
     };
-    let state = states[tail.transferId] ?? reset;
+    let state = states[id] ?? reset;
     const expired = Date.now() - state.timestamp > 2000;
     if (
       expired ||
@@ -47,14 +47,14 @@ export const createReceiver = (
       state = reset;
     }
 
-    states[tail.transferId] = state;
+    states[id] = state;
 
     const payload = data.slice(0, data.length - 1);
     state.payload = append(state.payload, payload);
     state.toggle = !state.toggle;
 
     if (tail.end) {
-      delete states[tail.transferId];
+      delete states[id];
 
       let { payload } = state;
       if (!tail.start) {
