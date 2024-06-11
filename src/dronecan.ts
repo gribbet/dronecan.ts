@@ -23,7 +23,7 @@ import {
   serviceTypeFromId,
 } from "./specification";
 import { createSubscriber } from "./subscriber";
-import type { Any } from "./util";
+import { type Any } from "./util";
 
 export type Dronecan<S extends Schema> = {
   broadcast: <Type extends MessageType<S>>(
@@ -34,7 +34,7 @@ export type Dronecan<S extends Schema> = {
     type: Type,
     destination: number,
     request: ServiceRequest<S, Type>,
-  ) => Promise<ServiceResponse<S, Type> | undefined>;
+  ) => Promise<ServiceResponse<S, Type>>;
   onMessage: <Type extends MessageType<S>>(
     type: Type,
     handler: (message: ReceivedMessage<S, Type>) => void,
@@ -153,7 +153,7 @@ export const createDronecan = <S extends Schema>(
     sender.send(frame, data);
   };
 
-  const request = <Type extends ServiceType<S>>(
+  const request = async <Type extends ServiceType<S>>(
     type: Type,
     destination: number,
     request: ServiceRequest<S, Type>,
@@ -166,16 +166,27 @@ export const createDronecan = <S extends Schema>(
       request: true,
       id,
     };
-    const transferId = sender.send(frame, encodeRequest(schema, type, request));
-    return new Promise<ServiceResponse<S, Type>>(onComplete => {
+    const encoded = encodeRequest(schema, type, request);
+    const transferId = sender.send(frame, encoded);
+    const response = new Promise<ServiceResponse<S, Type>>(onComplete => {
       const request: OpenRequest<Type> = {
         type,
         destination,
         transferId,
-        onComplete,
+        onComplete: _ => {
+          clearInterval(interval);
+          onComplete(_);
+        },
       };
+
+      const interval = setInterval(() => {
+        request.transferId = sender.send(frame, encoded);
+      }, 500);
+
       requests.push(request);
     });
+
+    return await response;
   };
 
   const onMessage = <Type extends MessageType<S>>(
