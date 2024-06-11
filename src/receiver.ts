@@ -30,7 +30,7 @@ export const createReceiver = (
     const reset: State = {
       payload: new Uint8Array(),
       transferId: tail.transferId,
-      toggle: false,
+      toggle: tail.toggle,
       timestamp: Date.now(),
     };
     let state = states[id] ?? reset;
