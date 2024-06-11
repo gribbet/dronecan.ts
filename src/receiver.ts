@@ -63,8 +63,13 @@ export const createReceiver = (
         payload = bits.drain();
         const signature = signatures[frame.id];
 
-        if (signature === undefined || crc !== transferCrc(signature, payload))
+        if (
+          signature === undefined ||
+          crc !== transferCrc(signature, payload)
+        ) {
+          if (signature !== undefined) console.log("Invalid CRC");
           return;
+        }
       }
 
       receive(frame, payload, state.transferId);
