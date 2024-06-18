@@ -3,6 +3,7 @@ import { transferCrc } from "./crc";
 import type { CanPayload } from "./dronecan";
 import type { Frame } from "./frame";
 import { decodeFrame } from "./frame";
+import type { Tail } from "./tail";
 import { decodeTail } from "./tail";
 import { append } from "./util";
 
@@ -16,45 +17,55 @@ export const createReceiver = (
 ) => {
   type State = {
     payload: Uint8Array;
-    transferId: number;
     toggle: boolean;
     timestamp: number;
   };
 
-  const states: { [id: number]: State } = {};
+  const states: { [key: number]: State } = {};
+
+  const transferKey = (frame: Frame, { transferId }: Tail) => {
+    const destination = "destination" in frame ? frame.destination : 0;
+    const discriminator = "discriminator" in frame ? frame.discriminator : 0;
+    const source = frame.source || discriminator;
+    const request = ("request" in frame ? frame.request : false) ? 1 : 0;
+    const { id } = frame;
+    return (
+      (id << 20) |
+      (source << 13) |
+      (destination << 6) |
+      (request << 5) |
+      transferId
+    );
+  };
 
   const read = ({ id, data }: CanPayload) => {
     const frame = decodeFrame(id);
     const tail = decodeTail(data[data.length - 1]!);
+    const { transferId } = tail;
+
+    const key = transferKey(frame, tail);
 
     const reset: State = {
       payload: new Uint8Array(),
-      transferId: tail.transferId,
       toggle: tail.toggle,
       timestamp: Date.now(),
     };
-    let state = states[id] ?? reset;
+    let state = states[key] ?? reset;
     const expired = Date.now() - state.timestamp > 2000;
-    if (
-      expired ||
-      tail.toggle !== state.toggle ||
-      tail.transferId !== state.transferId
-    ) {
+    if (expired || tail.toggle !== state.toggle) {
       if (expired) console.log("Expired");
       if (tail.toggle !== state.toggle) console.log("Invalid toggle");
-      if (tail.transferId !== state.transferId)
-        console.log("Invalid transfer ID");
       state = reset;
     }
 
-    states[id] = state;
+    states[key] = state;
 
     const payload = data.slice(0, data.length - 1);
     state.payload = append(state.payload, payload);
     state.toggle = !state.toggle;
 
     if (tail.end) {
-      delete states[id];
+      delete states[key];
 
       let { payload } = state;
       if (!tail.start) {
@@ -72,7 +83,7 @@ export const createReceiver = (
         }
       }
 
-      receive(frame, payload, state.transferId);
+      receive(frame, payload, transferId);
     }
   };
 
