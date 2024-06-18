@@ -52,11 +52,7 @@ export const createReceiver = (
     };
     let state = states[key] ?? reset;
     const expired = Date.now() - state.timestamp > 2000;
-    if (expired || tail.toggle !== state.toggle) {
-      if (expired) console.log("Expired");
-      if (tail.toggle !== state.toggle) console.log("Invalid toggle");
-      state = reset;
-    }
+    if (expired || tail.toggle !== state.toggle) state = reset;
 
     states[key] = state;
 
@@ -74,13 +70,8 @@ export const createReceiver = (
         payload = bits.drain();
         const signature = signatures[frame.id];
 
-        if (
-          signature === undefined ||
-          crc !== transferCrc(signature, payload)
-        ) {
-          if (signature !== undefined) console.log("Invalid CRC");
+        if (signature === undefined || crc !== transferCrc(signature, payload))
           return;
-        }
       }
 
       receive(frame, payload, transferId);
