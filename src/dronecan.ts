@@ -29,11 +29,13 @@ export type Dronecan<S extends Schema> = {
   broadcast: <Type extends MessageType<S>>(
     type: Type,
     message: Message<S, Type>,
+    priority?: number,
   ) => void;
   request: <Type extends ServiceType<S>>(
     type: Type,
     destination: number,
     request: ServiceRequest<S, Type>,
+    priority?: number,
   ) => Promise<ServiceResponse<S, Type>>;
   onMessage: <Type extends MessageType<S>>(
     type: Type,
@@ -141,6 +143,7 @@ export const createDronecan = <S extends Schema>(
   const broadcast = <Type extends MessageType<S>>(
     type: Type,
     message: Message<S, Type>,
+    priority?: number,
   ) => {
     const { id } = messageFromType(schema, type);
     if (id === undefined) return;
@@ -148,6 +151,7 @@ export const createDronecan = <S extends Schema>(
       type: "message",
       source: nodeId,
       id,
+      priority,
     };
     const data = encodeMessage(schema, type, message);
     sender.send(frame, data);
@@ -157,6 +161,7 @@ export const createDronecan = <S extends Schema>(
     type: Type,
     destination: number,
     request: ServiceRequest<S, Type>,
+    priority?: number,
   ) => {
     const { id } = serviceFromType(schema, type);
     const frame: Frame = {
@@ -165,6 +170,7 @@ export const createDronecan = <S extends Schema>(
       destination,
       request: true,
       id,
+      priority,
     };
     const encoded = encodeRequest(schema, type, request);
     const transferId = sender.send(frame, encoded);
