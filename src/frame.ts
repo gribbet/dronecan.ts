@@ -89,6 +89,6 @@ export const encodeFrame: (frame: Frame) => number = frame => {
     bits.write(16, id);
   }
   bits.write(3, other ?? 4);
-  bits.write(5, priority ?? 24);
+  bits.write(5, priority ?? 16);
   return bytesU32(bits.data);
 };
