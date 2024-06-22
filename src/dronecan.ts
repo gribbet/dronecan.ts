@@ -153,7 +153,7 @@ export const createDronecan = <S extends Schema>(
     sender.send(frame, data);
   };
 
-  const request = async <Type extends ServiceType<S>>(
+  const request = <Type extends ServiceType<S>>(
     type: Type,
     destination: number,
     request: ServiceRequest<S, Type>,
@@ -168,25 +168,18 @@ export const createDronecan = <S extends Schema>(
     };
     const encoded = encodeRequest(schema, type, request);
     const transferId = sender.send(frame, encoded);
-    const response = new Promise<ServiceResponse<S, Type>>(onComplete => {
-      const request: OpenRequest<Type> = {
+    return new Promise<ServiceResponse<S, Type>>((resolve, reject) => {
+      const timeout = setTimeout(() => reject(new Error("Timeout")), 500);
+      requests.push({
         type,
         destination,
         transferId,
         onComplete: _ => {
-          clearInterval(interval);
-          onComplete(_);
+          clearTimeout(timeout);
+          resolve(_);
         },
-      };
-
-      const interval = setInterval(() => {
-        request.transferId = sender.send(frame, encoded);
-      }, 500);
-
-      requests.push(request);
+      });
     });
-
-    return await response;
   };
 
   const onMessage = <Type extends MessageType<S>>(
