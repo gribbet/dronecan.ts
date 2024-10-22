@@ -61,11 +61,11 @@ export const biguint = (count: number, cast: Cast = "saturated") => {
   return { dsdl, maximumBits, encode, decode } satisfies Field<bigint>;
 };
 
-export const boolean = (cast: Cast = "saturated") => {
-  const dsdl = `${cast} uint1`;
+export const boolean = (count = 1, cast: Cast = "saturated") => {
+  const dsdl = `${cast} uint${count}`;
   const maximumBits = 1;
-  const encode = (bits: BitWriter, value: boolean) => bits.write(1, value);
-  const decode = (bits: BitReader) => !!bits.read(1);
+  const encode = (bits: BitWriter, value: boolean) => bits.write(count, value);
+  const decode = (bits: BitReader) => !!bits.read(count);
   return { dsdl, maximumBits, encode, decode } satisfies Field<boolean>;
 };
 
