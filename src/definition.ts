@@ -89,10 +89,14 @@ const encodeUnionType = <T extends TypeDefinition>(
 ) => {
   const count = fields(definition).length;
   const size = Math.ceil(Math.log2(count + 1));
-  const field = assert(fields(definition).find(_ => keys(value).includes(_)));
+  const field = assert(
+    fields(definition).find(
+      _ => keys(value).includes(_) && value[_] !== undefined,
+    ),
+  );
   const index = fields(definition).indexOf(field);
   bits.write(size, index);
-  definition[field].encode(bits, value);
+  definition[field].encode(bits, value[field]);
 };
 
 const encodeStandardType = <T extends TypeDefinition>(
