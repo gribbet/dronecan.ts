@@ -42,13 +42,15 @@ export const uint = (count: number, cast: Cast = "saturated") => {
 export const int = (count: number, cast: Cast = "saturated") => {
   const dsdl = `${cast} int${count}`;
   const maximumBits = count;
-  const signBit = 1 << (count - 1);
-  const mask = signBit - 1;
-  const encode = (bits: BitWriter, value: number) =>
-    bits.write(count, value < 0 ? signBit | (-value & mask) : value & mask);
+  const signBit = 1n << BigInt(count - 1);
+  const fullBitRange = 1n << BigInt(count);
+  const encode = (bits: BitWriter, value: number) => {
+    const bigValue = BigInt(Math.trunc(value));
+    bits.write(count, bigValue < 0n ? fullBitRange + bigValue : bigValue);
+  };
   const decode = (bits: BitReader) => {
-    const value = Number(bits.read(count));
-    return (value & signBit ? -1 : 1) * (value & mask);
+    const value = bits.read(count);
+    return Number(value & signBit ? value - fullBitRange : value);
   };
   return { dsdl, maximumBits, encode, decode } satisfies Field<number>;
 };
