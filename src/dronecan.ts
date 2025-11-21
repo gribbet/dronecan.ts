@@ -115,7 +115,7 @@ export const createDronecan = <S extends Schema>(
         const type = messageTypeFromId(schema, frame.id);
         if (!type) return;
         const message = decodeMessage(schema, type, payload);
-        messageSubscriber.emit({ type, source, message });
+        if (message) messageSubscriber.emit({ type, source, message });
         return;
       }
       case "service": {
@@ -127,10 +127,10 @@ export const createDronecan = <S extends Schema>(
 
         if (request) {
           const request = decodeRequest(schema, type, payload);
-          requestSubscriber.emit({ frame, request, transferId });
+          if (request) requestSubscriber.emit({ frame, request, transferId });
         } else {
           const response = decodeResponse(schema, type, payload);
-          handleResponse(type, source, transferId, response);
+          if (response) handleResponse(type, source, transferId, response);
         }
       }
     }

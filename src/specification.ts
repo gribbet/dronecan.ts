@@ -110,7 +110,13 @@ export const decodeMessage = <S extends Schema, Type extends MessageType<S>>(
   schema: S,
   type: Type,
   data: Uint8Array,
-) => decoded(messageDefinition(schema, type), data);
+) => {
+  try {
+    return decoded(messageDefinition(schema, type), data);
+  } catch (error) {
+    console.warn("Failed to decode message", { type, data, error });
+  }
+};
 
 export const encodeMessage = <S extends Schema, Type extends MessageType<S>>(
   schema: S,
@@ -122,7 +128,13 @@ export const decodeRequest = <S extends Schema, Type extends ServiceType<S>>(
   schema: S,
   type: Type,
   payload: Uint8Array,
-) => decoded(requestDefinition(schema, type), payload);
+) => {
+  try {
+    return decoded(requestDefinition(schema, type), payload);
+  } catch (error) {
+    console.warn("Failed to decode request", { type, payload, error });
+  }
+};
 
 export const encodeRequest = <S extends Schema, Type extends ServiceType<S>>(
   schema: S,
@@ -134,7 +146,13 @@ export const decodeResponse = <S extends Schema, Type extends ServiceType<S>>(
   schema: S,
   type: Type,
   payload: Uint8Array,
-) => decoded(responseDefinition(schema, type), payload);
+) => {
+  try {
+    return decoded(responseDefinition(schema, type), payload);
+  } catch (error) {
+    console.warn("Failed to decode response", { type, payload, error });
+  }
+};
 
 export const encodeResponse = <S extends Schema, Type extends ServiceType<S>>(
   schema: S,
