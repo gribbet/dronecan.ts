@@ -127,13 +127,17 @@ export const encoded = <T extends TypeDefinition>(
   return bits.data;
 };
 
-export const definitionDsdl = <T extends TypeDefinition>(definition: T) =>
+export const definitionDsdl = <T extends TypeDefinition>(
+  definition: T,
+  preserveFieldNames = false,
+) =>
   [
     ...(union in definition ? ["@union"] : []),
     ...fields(definition).map(key => {
       const { dsdl } = assert(definition[key]);
-      return dsdl.startsWith("void")
-        ? dsdl
-        : `${dsdl} ${camelToSnakeCase(String(key))}`;
+      const fieldName = preserveFieldNames
+        ? String(key)
+        : camelToSnakeCase(String(key));
+      return dsdl.startsWith("void") ? dsdl : `${dsdl} ${fieldName}`;
     }),
   ].join("\n");
