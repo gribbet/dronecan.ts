@@ -64,7 +64,7 @@ export const biguint = (count: number, cast: Cast = "saturated") => {
 };
 
 export const boolean = (count = 1, cast: Cast = "saturated") => {
-  const dsdl = `${cast} uint${count}`;
+  const dsdl = `${cast} bool`;
   const maximumBits = 1;
   const encode = (bits: BitWriter, value: boolean) => bits.write(count, value);
   const decode = (bits: BitReader) => !!bits.read(count);

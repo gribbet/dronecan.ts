@@ -181,10 +181,12 @@ export const message = <
   id,
   type,
   definition,
+  preserveFieldNames = false,
 }: {
   id?: Id;
   type: Type;
   definition: Definition;
+  preserveFieldNames?: boolean;
 }) => {
   const fieldSignatures = Object.values(definition)
     .map(_ => _.signature)
@@ -192,7 +194,9 @@ export const message = <
   const maximumBits = Object.values(definition)
     .map(_ => _.maximumBits)
     .reduce((a, b) => a + b, 0);
-  const dsdl = [type, definitionDsdl(definition)].filter(_ => !!_).join("\n");
+  const dsdl = [type, definitionDsdl(definition, preserveFieldNames)]
+    .filter(_ => !!_)
+    .join("\n");
   const signature = dsdlSignature(dsdl, fieldSignatures);
   return {
     id,
@@ -228,17 +232,24 @@ export const service = <
   id,
   request,
   response,
+  preserveFieldNames = false,
 }: {
   type: Type;
   id: Id;
   request: Request;
   response: Response;
+  preserveFieldNames?: boolean;
 }) => {
   const fieldSignatures = [
     ...Object.values(request).map(_ => _.signature),
     ...Object.values(response).map(_ => _.signature),
   ].filter((_): _ is bigint => !!_);
-  const dsdl = [type, definitionDsdl(request), "---", definitionDsdl(response)]
+  const dsdl = [
+    type,
+    definitionDsdl(request, preserveFieldNames),
+    "---",
+    definitionDsdl(response, preserveFieldNames),
+  ]
     .filter(_ => !!_)
     .join("\n");
   const signature = dsdlSignature(dsdl, fieldSignatures);
