@@ -1,25 +1,41 @@
-const readBits: (data: Uint8Array, offset: number, count: number) => bigint = (
+const readBits: (data: Uint8Array, offset: number, count: number, dsdl?: boolean) => bigint = (
   data,
   offset,
   count,
+  dsdl = false,
 ) => {
   if (count < 0 || count > 64) throw new Error("invalid");
   if (count === 0) return 0n;
 
   let result = 0n;
 
-  let i = 0;
-  while (i < count) {
-    const start = (offset + i) % 8;
-    const n = Math.min(count - i, 8 - start);
-    const end = start + n;
-    const index = Math.floor((i + offset) / 8);
-    const byte = data[index] ?? 0;
-    const bitOffset = Math.max(0, 8 - end);
-    const mask = ((1 << n) - 1) << bitOffset;
-    const bits = (byte & mask) >> bitOffset;
-    result |= BigInt(bits) << BigInt(i);
-    i += n;
+  if (dsdl) {
+    for (let i = 0; i < count; i++) {
+      const msgBitIndex = offset + i;
+      const byteIndex = Math.floor(msgBitIndex / 8);
+      const bitPos = 7 - (msgBitIndex % 8);
+      const bit = (data[byteIndex] ?? 0) >> bitPos & 1;
+
+      const resultBitPos = count < 8
+        ? (count - 1) - i  
+        : Math.floor(i / 8) * 8 + (7 - (i % 8));  
+
+      result |= BigInt(bit) << BigInt(resultBitPos);
+    }
+  } else {
+    let i = 0;
+    while (i < count) {
+      const start = (offset + i) % 8;
+      const n = Math.min(count - i, 8 - start);
+      const end = start + n;
+      const index = Math.floor((i + offset) / 8);
+      const byte = data[index] ?? 0;
+      const bitOffset = Math.max(0, 8 - end);
+      const mask = ((1 << n) - 1) << bitOffset;
+      const bits = (byte & mask) >> bitOffset;
+      result |= BigInt(bits) << BigInt(i);
+      i += n;
+    }
   }
 
   return result;
@@ -30,23 +46,40 @@ const writeBits: (
   offset: number,
   count: number,
   value: bigint,
-) => void = (data, offset, count, value) => {
+  dsdl?: boolean,
+) => void = (data, offset, count, value, dsdl = false) => {
   if (count < 0 || count > 64) throw new Error("invalid");
-  if (count === 0) return 0n;
+  if (count === 0) return;
 
-  let i = 0;
-  while (i < count) {
-    const start = (offset + i) % 8;
-    const n = Math.min(count - i, 8 - start);
-    const end = start + n;
-    const index = Math.floor((i + offset) / 8);
-    const byte = data[index] ?? 0;
-    const writeMask = (1n << BigInt(n)) - 1n;
-    const bits = Number((value >> BigInt(i)) & writeMask);
-    const bitOffset = Math.max(0, 8 - end);
-    const mask = ((1 << n) - 1) << bitOffset;
-    data[index] = (byte & ~mask) | ((bits << bitOffset) & mask);
-    i += n;
+  if (dsdl) {
+    for (let i = 0; i < count; i++) {
+      const valueBitPos = count < 8
+        ? (count - 1) - i  
+        : Math.floor(i / 8) * 8 + (7 - (i % 8)); 
+
+      const bit = Number((value >> BigInt(valueBitPos)) & 1n);
+
+      const msgBitIndex = offset + i;
+      const byteIndex = Math.floor(msgBitIndex / 8);
+      const bitPos = 7 - (msgBitIndex % 8);
+      const mask = 1 << bitPos;
+      data[byteIndex] = (data[byteIndex] ?? 0) & ~mask | (bit << bitPos);
+    }
+  } else {
+    let i = 0;
+    while (i < count) {
+      const start = (offset + i) % 8;
+      const n = Math.min(count - i, 8 - start);
+      const end = start + n;
+      const index = Math.floor((i + offset) / 8);
+      const byte = data[index] ?? 0;
+      const writeMask = (1n << BigInt(n)) - 1n;
+      const bits = Number((value >> BigInt(i)) & writeMask);
+      const bitOffset = Math.max(0, 8 - end);
+      const mask = ((1 << n) - 1) << bitOffset;
+      data[index] = (byte & ~mask) | ((bits << bitOffset) & mask);
+      i += n;
+    }
   }
 };
 
@@ -100,17 +133,17 @@ export type BitReader = {
   empty: boolean;
 };
 
-export const createBitReader: (data: Uint8Array) => BitReader = data => {
+export const createBitReader: (data: Uint8Array, dsdl?: boolean) => BitReader = (data, dsdl = false) => {
   let offset = 0;
 
   const read = (count: number) => {
-    const result = readBits(data, offset, count);
+    const result = readBits(data, offset, count, dsdl);
     offset += count;
     return result;
   };
 
   const drain = () => {
-    const result = data.slice(offset / 8);
+    const result = data.slice(Math.ceil(offset / 8));
     offset = data.length * 8;
     return result;
   };
@@ -129,13 +162,13 @@ export type BitWriter = {
   data: Uint8Array;
 };
 
-export const createBitWriter: () => BitWriter = () => {
+export const createBitWriter: (dsdl?: boolean) => BitWriter = (dsdl = false) => {
   let data = new Uint8Array();
   let offset = 0;
 
   const write = (count: number, value: bigint | number | boolean) => {
     data = padTo(data, Math.ceil((offset + count) / 8) + 8);
-    writeBits(data, offset, count, BigInt(value));
+    writeBits(data, offset, count, BigInt(value), dsdl);
     offset += count;
   };
 

@@ -116,13 +116,13 @@ const encodeStandardType = <T extends TypeDefinition>(
 export const decoded = <T extends TypeDefinition>(
   definition: T,
   data: Uint8Array,
-) => decodeType(definition, createBitReader(data), "tao");
+) => decodeType(definition, createBitReader(data, true), "tao");
 
 export const encoded = <T extends TypeDefinition>(
   definition: T,
   value: DefinitionType<T>,
 ) => {
-  const bits = createBitWriter();
+  const bits = createBitWriter(true);
   encodeType(definition, bits, value, "tao");
   return bits.data;
 };
