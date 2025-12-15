@@ -1,14 +1,14 @@
-export { Can, CanPayload, createDronecan, Dronecan } from "./dronecan";
+export type { Can, CanPayload, Dronecan } from "./dronecan";
+export { createDronecan } from "./dronecan";
 export * from "./field";
-export {
+export type {
   Message,
-  message,
   MessageId,
   MessageType,
   Schema,
-  service,
   ServiceId,
   ServiceRequest,
   ServiceResponse,
   ServiceType,
 } from "./specification";
+export { message, service } from "./specification";
