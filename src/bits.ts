@@ -1,52 +1,40 @@
-const readBits: (data: Uint8Array, offset: number, count: number) => bigint = (
-  data,
-  offset,
-  count,
-) => {
+const valueBit = (i: number, count: number): number => {
+  const base = i & ~7;
+  const len = Math.min(8, count - base);
+  return base + (len - 1 - (i - base));
+};
+
+export const readBits = (data: Uint8Array, offset: number, count: number) => {
   if (count < 0 || count > 64) throw new Error("invalid");
   if (count === 0) return 0n;
 
   let result = 0n;
-
-  let i = 0;
-  while (i < count) {
-    const start = (offset + i) % 8;
-    const n = Math.min(count - i, 8 - start);
-    const end = start + n;
-    const index = Math.floor((i + offset) / 8);
-    const byte = data[index] ?? 0;
-    const bitOffset = Math.max(0, 8 - end);
-    const mask = ((1 << n) - 1) << bitOffset;
-    const bits = (byte & mask) >> bitOffset;
-    result |= BigInt(bits) << BigInt(i);
-    i += n;
+  for (let i = 0; i < count; i++) {
+    const dataBit = offset + i;
+    const byte = dataBit >>> 3;
+    const byteBit = 7 - (dataBit & 7);
+    const bit = ((data[byte] ?? 0) >>> byteBit) & 1;
+    result |= BigInt(bit) << BigInt(valueBit(i, count));
   }
-
   return result;
 };
 
-const writeBits: (
+export const writeBits = (
   data: Uint8Array,
   offset: number,
   count: number,
   value: bigint,
-) => void = (data, offset, count, value) => {
+) => {
   if (count < 0 || count > 64) throw new Error("invalid");
-  if (count === 0) return 0n;
+  if (count === 0) return;
 
-  let i = 0;
-  while (i < count) {
-    const start = (offset + i) % 8;
-    const n = Math.min(count - i, 8 - start);
-    const end = start + n;
-    const index = Math.floor((i + offset) / 8);
-    const byte = data[index] ?? 0;
-    const writeMask = (1n << BigInt(n)) - 1n;
-    const bits = Number((value >> BigInt(i)) & writeMask);
-    const bitOffset = Math.max(0, 8 - end);
-    const mask = ((1 << n) - 1) << bitOffset;
-    data[index] = (byte & ~mask) | ((bits << bitOffset) & mask);
-    i += n;
+  for (let i = 0; i < count; i++) {
+    const dataBit = offset + i;
+    const byte = dataBit >>> 3;
+    const byteBit = 7 - (dataBit & 7);
+    const bitValue = Number((value >> BigInt(valueBit(i, count))) & 1n);
+
+    data[byte] = ((data[byte] ?? 0) & ~(1 << byteBit)) | (bitValue << byteBit);
   }
 };
 
