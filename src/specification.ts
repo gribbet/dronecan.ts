@@ -1,5 +1,4 @@
-import type { TypeDefinition } from "./definition";
-import type { DefinitionType } from "./definition";
+import type { DefinitionType, TypeDefinition } from "./definition";
 import { decoded, definitionDsdl, encoded } from "./definition";
 import { dsdlSignature } from "./signature";
 import type { Any, Find, Index } from "./util";
