@@ -38,10 +38,13 @@ export const writeBits = (
   }
 };
 
-const padTo = (data: Uint8Array, count: number) => {
+const padTo = (
+  data: Uint8Array<ArrayBuffer>,
+  count: number,
+): Uint8Array<ArrayBuffer> => {
   const padding = count - data.length;
   if (padding <= 0) return data;
-  const padded = new Uint8Array(count);
+  const padded = new Uint8Array(new ArrayBuffer(count));
   padded.set(data);
   return padded;
 };
@@ -70,13 +73,13 @@ export const u64Bytes: (value: bigint) => Uint8Array = value => {
   return data;
 };
 
-export const bytesU8: (_data: Uint8Array) => number = _data => {
+export const bytesU8: (_data: Uint8Array<ArrayBuffer>) => number = _data => {
   const data = padTo(_data, 1);
   const view = new DataView(data.buffer);
   return view.getUint8(0);
 };
 
-export const bytesU32: (_data: Uint8Array) => number = _data => {
+export const bytesU32: (_data: Uint8Array<ArrayBuffer>) => number = _data => {
   const data = padTo(_data, 4);
   const view = new DataView(data.buffer);
   return view.getUint32(0, true);
@@ -114,7 +117,7 @@ export const createBitReader: (data: Uint8Array) => BitReader = data => {
 
 export type BitWriter = {
   write(count: number, value: bigint | number | boolean): void;
-  data: Uint8Array;
+  data: Uint8Array<ArrayBuffer>;
 };
 
 export const createBitWriter: () => BitWriter = () => {
