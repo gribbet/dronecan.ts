@@ -6,8 +6,15 @@
     "type": "git",
     "url": "git+https://github.com/gribbet/dronecan.ts.git"
   },
+  "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
   "files": [
     "README.md",
     "/dist"
@@ -19,10 +26,10 @@
   },
   "devDependencies": {
     "@gribbet/eslint-config": "github:gribbet/eslint-config",
-    "@types/node": "^25.0.2",
+    "@types/node": "^25.0.9",
     "eslint": "^9.39.2",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.16"
+    "vitest": "^4.0.17"
   },
   "dependencies": {
     "@petamoriken/float16": "^3.9.3"
