@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import { decoded, encoded } from "../src/definition";
-import { boolean, float16, uint } from "../src/field";
-import { message, messageDefinition } from "../src/specification";
+import { decoded, encoded } from "../src/definition.js";
+import { boolean, float16, uint } from "../src/field.js";
+import { message, messageDefinition } from "../src/specification.js";
 
 const type = "custom.Test" as const;
 

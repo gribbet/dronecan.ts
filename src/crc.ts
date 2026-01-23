@@ -1,5 +1,5 @@
-import { u64Bytes } from "./bits";
-import { append, range } from "./util";
+import { u64Bytes } from "./bits.js";
+import { append, range } from "./util.js";
 
 export const transferCrc = (signature: bigint, payload: Uint8Array) =>
   crc16(append(u64Bytes(signature), payload));

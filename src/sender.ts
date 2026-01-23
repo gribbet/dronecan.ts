@@ -1,11 +1,11 @@
-import { u8Bytes, u16Bytes } from "./bits";
-import { transferCrc } from "./crc";
-import type { CanPayload } from "./dronecan";
-import type { Frame } from "./frame";
-import { encodeFrame } from "./frame";
-import type { Tail } from "./tail";
-import { encodeTail } from "./tail";
-import { append, assert } from "./util";
+import { u8Bytes, u16Bytes } from "./bits.js";
+import { transferCrc } from "./crc.js";
+import type { CanPayload } from "./dronecan.js";
+import type { Frame } from "./frame.js";
+import { encodeFrame } from "./frame.js";
+import type { Tail } from "./tail.js";
+import { encodeTail } from "./tail.js";
+import { append, assert } from "./util.js";
 
 export type Sender = {
   send: (frame: Frame, payload: Uint8Array) => void;

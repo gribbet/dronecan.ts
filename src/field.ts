@@ -1,11 +1,11 @@
 import { getFloat16, setFloat16 } from "@petamoriken/float16";
 
-import type { BitReader, BitWriter } from "./bits";
-import type { DefinitionType, TypeDefinition } from "./definition";
-import { decodeType, encodeType } from "./definition";
-import type { MessageDefinition } from "./specification";
-import type { Any } from "./util";
-import { assert, keys, range } from "./util";
+import type { BitReader, BitWriter } from "./bits.js";
+import type { DefinitionType, TypeDefinition } from "./definition.js";
+import { decodeType, encodeType } from "./definition.js";
+import type { MessageDefinition } from "./specification.js";
+import type { Any } from "./util.js";
+import { assert, keys, range } from "./util.js";
 
 export const union = Symbol();
 

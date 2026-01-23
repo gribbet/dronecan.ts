@@ -1,4 +1,9 @@
-import { bytesU32, createBitReader, createBitWriter, u32Bytes } from "./bits";
+import {
+  bytesU32,
+  createBitReader,
+  createBitWriter,
+  u32Bytes,
+} from "./bits.js";
 
 export type MessageFrame = {
   type: "message";

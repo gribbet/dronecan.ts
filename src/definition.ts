@@ -1,9 +1,9 @@
-import type { BitReader, BitWriter } from "./bits";
-import { createBitReader, createBitWriter } from "./bits";
-import type { Field } from "./field";
-import { union } from "./field";
-import type { Any } from "./util";
-import { assert, camelToSnakeCase, keys } from "./util";
+import type { BitReader, BitWriter } from "./bits.js";
+import { createBitReader, createBitWriter } from "./bits.js";
+import type { Field } from "./field.js";
+import { union } from "./field.js";
+import type { Any } from "./util.js";
+import { assert, camelToSnakeCase, keys } from "./util.js";
 
 type Union = {
   [union]: readonly [];

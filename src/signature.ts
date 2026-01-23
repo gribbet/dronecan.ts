@@ -1,5 +1,5 @@
-import { u64Bytes } from "./bits";
-import { append, range } from "./util";
+import { u64Bytes } from "./bits.js";
+import { append, range } from "./util.js";
 
 const mask = 0xffffffffffffffffn;
 const poly = 0x42f0e1eba9ea3693n;
