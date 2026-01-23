@@ -1,6 +1,6 @@
-export type { Can, CanPayload, Dronecan } from "./dronecan";
-export { createDronecan } from "./dronecan";
-export * from "./field";
+export type { Can, CanPayload, Dronecan } from "./dronecan.js";
+export { createDronecan } from "./dronecan.js";
+export * from "./field.js";
 export type {
   Message,
   MessageId,
@@ -10,5 +10,5 @@ export type {
   ServiceRequest,
   ServiceResponse,
   ServiceType,
-} from "./specification";
-export { message, service } from "./specification";
+} from "./specification.js";
+export { message, service } from "./specification.js";

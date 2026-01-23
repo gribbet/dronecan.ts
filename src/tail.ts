@@ -1,5 +1,5 @@
-import { createBitReader, createBitWriter, u8Bytes } from "./bits";
-import { assert } from "./util";
+import { createBitReader, createBitWriter, u8Bytes } from "./bits.js";
+import { assert } from "./util.js";
 
 export type Tail = {
   transferId: number;

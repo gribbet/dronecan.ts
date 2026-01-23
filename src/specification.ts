@@ -1,7 +1,7 @@
-import type { DefinitionType, TypeDefinition } from "./definition";
-import { decoded, definitionDsdl, encoded } from "./definition";
-import { dsdlSignature } from "./signature";
-import type { Any, Find, Index } from "./util";
+import type { DefinitionType, TypeDefinition } from "./definition.js";
+import { decoded, definitionDsdl, encoded } from "./definition.js";
+import { dsdlSignature } from "./signature.js";
+import type { Any, Find, Index } from "./util.js";
 
 export type Schema = {
   messages: readonly MessageDefinition<Any, Any, Any>[];

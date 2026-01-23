@@ -1,6 +1,6 @@
-import type { Frame, ServiceFrame } from "./frame";
-import { createReceiver } from "./receiver";
-import { createSender } from "./sender";
+import type { Frame, ServiceFrame } from "./frame.js";
+import { createReceiver } from "./receiver.js";
+import { createSender } from "./sender.js";
 import type {
   Message,
   MessageType,
@@ -8,7 +8,7 @@ import type {
   ServiceRequest,
   ServiceResponse,
   ServiceType,
-} from "./specification";
+} from "./specification.js";
 import {
   collectSignatures,
   decodeMessage,
@@ -21,9 +21,9 @@ import {
   messageTypeFromId,
   serviceFromType,
   serviceTypeFromId,
-} from "./specification";
-import { createSubscriber } from "./subscriber";
-import { type Any } from "./util";
+} from "./specification.js";
+import { createSubscriber } from "./subscriber.js";
+import { type Any } from "./util.js";
 
 export type Dronecan<S extends Schema> = {
   broadcast: <Type extends MessageType<S>>(

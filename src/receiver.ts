@@ -1,11 +1,11 @@
-import { createBitReader } from "./bits";
-import { transferCrc } from "./crc";
-import type { CanPayload } from "./dronecan";
-import type { Frame } from "./frame";
-import { decodeFrame } from "./frame";
-import type { Tail } from "./tail";
-import { decodeTail } from "./tail";
-import { append } from "./util";
+import { createBitReader } from "./bits.js";
+import { transferCrc } from "./crc.js";
+import type { CanPayload } from "./dronecan.js";
+import type { Frame } from "./frame.js";
+import { decodeFrame } from "./frame.js";
+import type { Tail } from "./tail.js";
+import { decodeTail } from "./tail.js";
+import { append } from "./util.js";
 
 export type Receiver = {
   read: (payload: CanPayload) => void;
