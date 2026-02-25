@@ -1,4 +1,4 @@
-export type { Can, CanPayload, Dronecan } from "./dronecan.js";
+export type { Can, CanPayload, Dronecan, ReceivedMessage } from "./dronecan.js";
 export { createDronecan } from "./dronecan.js";
 export * from "./field.js";
 export type {
