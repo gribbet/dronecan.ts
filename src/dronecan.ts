@@ -96,16 +96,14 @@ export const createDronecan = <S extends Schema>(
     transferId: number,
     response: ServiceResponse<S, Type>,
   ) => {
-    const onComplete = requests.find(
-      _ =>
-        _.type === type &&
-        _.destination === source &&
-        _.transferId === transferId,
-    )?.onComplete;
-
-    onComplete?.(response);
-
-    requests = requests.filter(_ => _.onComplete !== onComplete);
+    requests
+      .find(
+        _ =>
+          _.type === type &&
+          _.destination === source &&
+          _.transferId === transferId,
+      )
+      ?.onComplete(response);
   };
 
   const receiver = createReceiver(signatures, (frame, payload, transferId) => {
@@ -175,16 +173,24 @@ export const createDronecan = <S extends Schema>(
     const encoded = encodeRequest(schema, type, request);
     const transferId = sender.send(frame, encoded);
     return new Promise<ServiceResponse<S, Type>>((resolve, reject) => {
-      const timeout = setTimeout(() => reject(new Error("Timeout")), 500);
-      requests.push({
+      const finish = () => {
+        requests = requests.filter(_ => _ !== request);
+      };
+      const timeout = setTimeout(() => {
+        finish();
+        reject(new Error("Timeout"));
+      }, 500);
+      const request = {
         type,
         destination,
         transferId,
         onComplete: _ => {
           clearTimeout(timeout);
+          finish();
           resolve(_);
         },
-      });
+      } satisfies OpenRequest<Any>;
+      requests.push(request);
     });
   };
 
