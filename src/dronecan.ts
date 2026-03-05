@@ -175,15 +175,21 @@ export const createDronecan = <S extends Schema>(
     const encoded = encodeRequest(schema, type, request);
     const transferId = sender.send(frame, encoded);
     return new Promise<ServiceResponse<S, Type>>((resolve, reject) => {
-      const timeout = setTimeout(() => reject(new Error("Timeout")), 500);
+      const onComplete = (_: ServiceResponse<S, Type>) => {
+        clearTimeout(timeout);
+        resolve(_);
+      };
+
+      const timeout = setTimeout(() => {
+        requests = requests.filter(r => r.onComplete !== onComplete);
+        reject(new Error("Timeout"));
+      }, 500);
+
       requests.push({
         type,
         destination,
         transferId,
-        onComplete: _ => {
-          clearTimeout(timeout);
-          resolve(_);
-        },
+        onComplete,
       });
     });
   };
