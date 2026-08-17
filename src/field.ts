@@ -110,7 +110,7 @@ export const float64 = (cast: Cast = "saturated") => {
   const view = new DataView(data.buffer);
   const encode = (bits: BitWriter, value: number) => {
     view.setFloat64(0, value, true);
-    bits.write(64, view.getBigUint64(0));
+    bits.write(64, view.getBigUint64(0, true));
   };
   const decode = (bits: BitReader) => {
     view.setBigUint64(0, bits.read(64), true);
