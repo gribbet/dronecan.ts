@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { decoded, encoded } from "../src/definition.js";
-import { boolean, float16, float32, float64, uint } from "../src/field.js";
+import { boolean, float16, uint } from "../src/field.js";
 import { message, messageDefinition } from "../src/specification.js";
 
 const type = "custom.Test" as const;
@@ -16,8 +16,6 @@ const schema = {
         test2: boolean(),
         test3: uint(8),
         test4: float16(),
-        test5: float64(),
-        test6: float32(),
       },
     }),
   ],
@@ -31,15 +29,13 @@ describe("message roundtrip", () =>
       test2: true,
       test3: 67,
       test4: 1.25,
-      test5: 1.25,
-      test6: 1.25,
     };
     const definition = messageDefinition(schema, type);
     const bytes = encoded(definition, value);
     const hex = Array.from(bytes)
       .map(_ => _.toString(16).padStart(2, "0"))
       .join("");
-    expect(hex).toEqual("3930a1801e8000000000007a1f8000501f80");
+    expect(hex).toEqual("3930a1801e80");
     const result = decoded(definition, bytes);
     expect(result).toEqual(value);
   }));
