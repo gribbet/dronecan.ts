@@ -9,6 +9,7 @@ import { append, assert } from "./util.js";
 
 export type Sender = {
   send: (frame: Frame, payload: Uint8Array) => void;
+  nextTransferId: (frame: Frame) => number;
 };
 
 type State = {
@@ -22,6 +23,16 @@ export const createSender = (
 ) => {
   const states: { [id: number]: State } = {};
 
+  const nextTransferId = (frame: Frame) => {
+    const { time, transferId } = states[encodeFrame(frame)] ?? {
+      time: Date.now(),
+      transferId: 0,
+    };
+
+    const expired = Date.now() - time > 2000;
+    return expired ? 0 : transferId;
+  };
+
   const send = (
     frame: Frame,
     payload: Uint8Array,
@@ -29,15 +40,7 @@ export const createSender = (
   ) => {
     const id = encodeFrame(frame);
 
-    let { time, transferId } = states[id] ?? {
-      time: Date.now(),
-      transferId: 0,
-    };
-
-    const expired = Date.now() - time > 2000;
-    if (expired) transferId = 0;
-
-    if (requestTransferId !== undefined) transferId = requestTransferId;
+    let transferId = requestTransferId ?? nextTransferId(frame);
 
     if (payload.length <= 7) {
       const tail: Tail = {
@@ -76,7 +79,7 @@ export const createSender = (
       }
     }
 
-    time = Date.now();
+    const time = Date.now();
     const currentTransferId = transferId;
     transferId = (transferId + 1) % 32;
     states[id] = { time, transferId };
@@ -84,5 +87,5 @@ export const createSender = (
     return currentTransferId;
   };
 
-  return { send } satisfies Sender;
+  return { send, nextTransferId } satisfies Sender;
 };

@@ -87,8 +87,21 @@ export const createDronecan = <S extends Schema>(
     destination: number;
     transferId: number;
     onComplete: (response: ServiceResponse<S, Type>) => void;
+    settled: Promise<void>;
   };
   let requests: OpenRequest<Any>[] = [];
+
+  const findRequest = (
+    type: ServiceType<S>,
+    destination: number,
+    transferId: number,
+  ) =>
+    requests.find(
+      _ =>
+        _.type === type &&
+        _.destination === destination &&
+        _.transferId === transferId,
+    );
 
   const handleResponse = <Type extends ServiceType<S>>(
     type: Type,
@@ -96,14 +109,7 @@ export const createDronecan = <S extends Schema>(
     transferId: number,
     response: ServiceResponse<S, Type>,
   ) => {
-    requests
-      .find(
-        _ =>
-          _.type === type &&
-          _.destination === source &&
-          _.transferId === transferId,
-      )
-      ?.onComplete(response);
+    findRequest(type, source, transferId)?.onComplete(response);
   };
 
   const receiver = createReceiver(signatures, (frame, payload, transferId) => {
@@ -155,7 +161,7 @@ export const createDronecan = <S extends Schema>(
     sender.send(frame, data);
   };
 
-  const request = <Type extends ServiceType<S>>(
+  const request = async <Type extends ServiceType<S>>(
     type: Type,
     destination: number,
     request: ServiceRequest<S, Type>,
@@ -171,10 +177,20 @@ export const createDronecan = <S extends Schema>(
       priority,
     };
     const encoded = encodeRequest(schema, type, request);
+
+    let pending = findRequest(type, destination, sender.nextTransferId(frame));
+    while (pending) {
+      await pending.settled;
+      pending = findRequest(type, destination, sender.nextTransferId(frame));
+    }
+
     const transferId = sender.send(frame, encoded);
+    let settle = () => {};
+    const settled = new Promise<void>(resolve => (settle = resolve));
     return new Promise<ServiceResponse<S, Type>>((resolve, reject) => {
       const finish = () => {
         requests = requests.filter(_ => _ !== request);
+        settle();
       };
       const timeout = setTimeout(() => {
         finish();
@@ -184,6 +200,7 @@ export const createDronecan = <S extends Schema>(
         type,
         destination,
         transferId,
+        settled,
         onComplete: _ => {
           clearTimeout(timeout);
           finish();
