@@ -23,7 +23,8 @@ import {
   serviceTypeFromId,
 } from "./specification.js";
 import { createSubscriber } from "./subscriber.js";
-import { type Any } from "./util.js";
+import type { Any } from "./util.js";
+import { signal } from "./util.js";
 
 export type Dronecan<S extends Schema> = {
   broadcast: <Type extends MessageType<S>>(
@@ -185,12 +186,11 @@ export const createDronecan = <S extends Schema>(
     }
 
     const transferId = sender.send(frame, encoded);
-    let settle = () => {};
-    const settled = new Promise<void>(resolve => (settle = resolve));
+    const [settled, onSettle] = signal();
     return new Promise<ServiceResponse<S, Type>>((resolve, reject) => {
       const finish = () => {
         requests = requests.filter(_ => _ !== request);
-        settle();
+        onSettle();
       };
       const timeout = setTimeout(() => {
         finish();

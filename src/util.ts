@@ -33,3 +33,9 @@ export const assert = <T>(value: T | undefined) => {
   if (value === undefined) throw new Error("unexpected");
   return value;
 };
+
+export const signal = <T = void>() => {
+  let trigger: (value: T) => void = () => {};
+  const promise = new Promise<T>(resolve => (trigger = resolve));
+  return [promise, trigger] as const;
+};
