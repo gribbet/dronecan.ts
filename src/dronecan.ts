@@ -1,4 +1,5 @@
 import type { Frame, ServiceFrame } from "./frame.js";
+import { encodeFrame } from "./frame.js";
 import { createReceiver } from "./receiver.js";
 import { createSender } from "./sender.js";
 import type {
@@ -87,8 +88,30 @@ export const createDronecan = <S extends Schema>(
     destination: number;
     transferId: number;
     onComplete: (response: ServiceResponse<S, Type>) => void;
+    done: () => Promise<void>;
   };
   let requests: OpenRequest<Any>[] = [];
+
+  const transferIds: { [session: number]: number } = {};
+  const session = (frame: Frame) => encodeFrame({ ...frame, priority: 0 });
+  const currentTransferId = (frame: Frame) => transferIds[session(frame)] ?? 0;
+  const nextTransferId = (frame: Frame) => {
+    const transferId = currentTransferId(frame);
+    transferIds[session(frame)] = (transferId + 1) % 32;
+    return transferId;
+  };
+
+  const findRequest = (
+    type: ServiceType<S>,
+    destination: number,
+    transferId: number,
+  ) =>
+    requests.find(
+      _ =>
+        _.type === type &&
+        _.destination === destination &&
+        _.transferId === transferId,
+    );
 
   const handleResponse = <Type extends ServiceType<S>>(
     type: Type,
@@ -96,14 +119,7 @@ export const createDronecan = <S extends Schema>(
     transferId: number,
     response: ServiceResponse<S, Type>,
   ) => {
-    requests
-      .find(
-        _ =>
-          _.type === type &&
-          _.destination === source &&
-          _.transferId === transferId,
-      )
-      ?.onComplete(response);
+    findRequest(type, source, transferId)?.onComplete(response);
   };
 
   const receiver = createReceiver(signatures, (frame, payload, transferId) => {
@@ -152,10 +168,10 @@ export const createDronecan = <S extends Schema>(
       priority,
     };
     const data = encodeMessage(schema, type, message);
-    sender.send(frame, data);
+    sender.send(frame, data, nextTransferId(frame));
   };
 
-  const request = <Type extends ServiceType<S>>(
+  const request = async <Type extends ServiceType<S>>(
     type: Type,
     destination: number,
     request: ServiceRequest<S, Type>,
@@ -171,27 +187,41 @@ export const createDronecan = <S extends Schema>(
       priority,
     };
     const encoded = encodeRequest(schema, type, request);
-    const transferId = sender.send(frame, encoded);
-    return new Promise<ServiceResponse<S, Type>>((resolve, reject) => {
-      const finish = () => {
-        requests = requests.filter(_ => _ !== request);
-      };
-      const timeout = setTimeout(() => {
-        finish();
-        reject(new Error("Timeout"));
-      }, 500);
-      const request = {
-        type,
-        destination,
-        transferId,
-        onComplete: _ => {
+
+    const pending = () =>
+      findRequest(type, destination, currentTransferId(frame));
+    while (pending()) await pending()?.done();
+
+    const transferId = nextTransferId(frame);
+    sender.send(frame, encoded, transferId);
+    const response = new Promise<ServiceResponse<S, Type>>(
+      (resolve, reject) => {
+        const finish = () => {
+          requests = requests.filter(_ => _ !== request);
+        };
+        const timeout = setTimeout(() => {
+          finish();
+          reject(new Error("Timeout"));
+        }, 500);
+        const done = async () => {
+          await response.catch(() => {});
+        };
+        const onComplete = (_: ServiceResponse<S, Type>) => {
           clearTimeout(timeout);
           finish();
           resolve(_);
-        },
-      } satisfies OpenRequest<Any>;
-      requests.push(request);
-    });
+        };
+        const request = {
+          type,
+          destination,
+          transferId,
+          done,
+          onComplete,
+        } satisfies OpenRequest<Any>;
+        requests.push(request);
+      },
+    );
+    return response;
   };
 
   const onMessage = <Type extends MessageType<S>>(
