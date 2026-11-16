@@ -8,36 +8,15 @@ import { encodeTail } from "./tail.js";
 import { append, assert } from "./util.js";
 
 export type Sender = {
-  send: (frame: Frame, payload: Uint8Array) => void;
-};
-
-type State = {
-  time: number;
-  transferId: number;
+  send: (frame: Frame, payload: Uint8Array, transferId: number) => void;
 };
 
 export const createSender = (
   signatures: { [id: number]: bigint },
   write: (payload: CanPayload) => void,
 ) => {
-  const states: { [id: number]: State } = {};
-
-  const send = (
-    frame: Frame,
-    payload: Uint8Array,
-    requestTransferId?: number,
-  ) => {
+  const send = (frame: Frame, payload: Uint8Array, transferId: number) => {
     const id = encodeFrame(frame);
-
-    let { time, transferId } = states[id] ?? {
-      time: Date.now(),
-      transferId: 0,
-    };
-
-    const expired = Date.now() - time > 2000;
-    if (expired) transferId = 0;
-
-    if (requestTransferId !== undefined) transferId = requestTransferId;
 
     if (payload.length <= 7) {
       const tail: Tail = {
@@ -75,13 +54,6 @@ export const createSender = (
         start = false;
       }
     }
-
-    time = Date.now();
-    const currentTransferId = transferId;
-    transferId = (transferId + 1) % 32;
-    states[id] = { time, transferId };
-
-    return currentTransferId;
   };
 
   return { send } satisfies Sender;
